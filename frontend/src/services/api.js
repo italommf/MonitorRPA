@@ -1,7 +1,18 @@
 import axios from 'axios';
 
+const getBaseURL = () => {
+    if (typeof window !== 'undefined') {
+        const { hostname, port } = window.location;
+        // Se estivermos na porta 8080 (produção custom), a API estará na 8081
+        if (port === '8080') {
+            return `http://${hostname}:8081/api`;
+        }
+    }
+    return '/api';
+};
+
 const api = axios.create({
-    baseURL: '/api',
+    baseURL: getBaseURL(),
     headers: {
         'Content-Type': 'application/json',
     },
