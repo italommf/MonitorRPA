@@ -311,40 +311,85 @@ export default function SystemDetails() {
                         ) : (
                             <div className="relative">
                                 {/* Vertical line */}
-                                <div className="absolute left-6 top-0 bottom-0 w-0.5 bg-white/5" />
+                                <div className="absolute left-6 top-6 bottom-6 w-0.5 bg-white/5" />
 
-                                <div className="space-y-4">
-                                    {pings.map((ping, idx) => {
-                                        const prevPing = pings[idx + 1];
-                                        const isStatusChange = !prevPing || prevPing.status !== ping.status;
+                                <div className="space-y-6">
+                                    {(() => {
+                                        // Group consecutive pings by status
+                                        const groups = [];
+                                        let currentGroup = null;
 
-                                        if (!isStatusChange) return null; // Only show status changes
+                                        pings.forEach((ping) => {
+                                            if (!currentGroup || currentGroup.status !== ping.status) {
+                                                currentGroup = {
+                                                    id: ping.id,
+                                                    status: ping.status,
+                                                    pings: [ping],
+                                                    timestamp: ping.timestamp
+                                                };
+                                                groups.push(currentGroup);
+                                            } else {
+                                                currentGroup.pings.push(ping);
+                                            }
+                                        });
 
-                                        return (
-                                            <div key={ping.id} className="relative pl-12">
-                                                <div className={`absolute left-[18px] top-1/2 -translate-y-1/2 w-3.5 h-3.5 rounded-full border-2 border-[#12121c] z-10 ${ping.status ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.4)]' : 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.4)]'}`} />
-                                                <div className="glass-card p-4 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-white/5 hover:bg-white/5 transition-colors">
-                                                    <div className="flex items-center gap-3">
-                                                        <span className={`text-sm font-bold uppercase tracking-tight ${ping.status ? 'text-green-400' : 'text-red-400'}`}>
-                                                            {ping.status ? 'Sistema Voltou a Rodar' : 'Sistema Parou de Rodar'}
-                                                        </span>
-                                                        {ping.client_info && (
-                                                            <span className="text-[10px] px-2 py-0.5 rounded-md bg-white/5 text-gray-500 font-mono">
-                                                                {ping.client_info}
+                                        return groups.map((group) => (
+                                            <div key={group.id} className="relative pl-12">
+                                                <div className={`absolute left-[18px] top-6 -translate-y-1/2 w-3.5 h-3.5 rounded-full border-2 border-[#12121c] z-10 ${group.status ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.4)]' : 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.4)]'}`} />
+
+                                                <div className={`glass-card rounded-xl border-white/5 overflow-hidden transition-colors ${group.status ? 'bg-green-500/5' : 'bg-red-500/5'}`}>
+                                                    {/* Group Header */}
+                                                    <div className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-white/5">
+                                                        <div className="flex items-center gap-3">
+                                                            <span className={`text-sm font-bold uppercase tracking-tight ${group.status ? 'text-green-400' : 'text-red-400'}`}>
+                                                                {group.status ? 'Sistema Online' : 'Sistema Parou de Rodar'}
                                                             </span>
-                                                        )}
+                                                            <span className="text-xs text-gray-500">
+                                                                ({group.pings.length} {group.pings.length === 1 ? 'evento' : 'eventos'})
+                                                            </span>
+                                                        </div>
+                                                        <div className="text-xs text-gray-500 flex items-center gap-2">
+                                                            <Clock className="w-3 h-3" />
+                                                            {formatRelativeTime(group.timestamp)}
+                                                        </div>
                                                     </div>
-                                                    <div className="text-xs text-gray-500 flex items-center gap-2">
-                                                        <Clock className="w-3 h-3" />
-                                                        {formatDateTime(ping.timestamp)}
-                                                        <span className="text-[10px] px-2 py-0.5 rounded bg-black/30 font-medium">
-                                                            {formatRelativeTime(ping.timestamp)}
-                                                        </span>
-                                                    </div>
+
+                                                    {/* Individual Pings List for Online status */}
+                                                    {group.status && (
+                                                        <div className="divide-y divide-white/5 bg-black/20 max-h-80 overflow-y-auto">
+                                                            {group.pings.map((ping) => (
+                                                                <div key={ping.id} className="p-3 pl-4 flex items-center justify-between hover:bg-white/5 transition-colors">
+                                                                    <div className="flex items-center gap-3">
+                                                                        <div className="w-1.5 h-1.5 rounded-full bg-green-500/50" />
+                                                                        <span className="text-xs text-gray-300 font-mono">
+                                                                            Ping recebido
+                                                                        </span>
+                                                                        {ping.client_info && (
+                                                                            <span className="text-[10px] px-2 py-0.5 rounded-md bg-white/5 text-gray-500 font-mono">
+                                                                                {ping.client_info}
+                                                                            </span>
+                                                                        )}
+                                                                    </div>
+                                                                    <div className="text-[10px] text-gray-500 font-mono">
+                                                                        {formatDateTime(ping.timestamp)}
+                                                                    </div>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    )}
+
+                                                    {/* Show timestamp for Offline status */}
+                                                    {!group.status && (
+                                                        <div className="p-3 pl-4 bg-black/20">
+                                                            <div className="text-xs text-gray-500">
+                                                                {formatDateTime(group.timestamp)}
+                                                            </div>
+                                                        </div>
+                                                    )}
                                                 </div>
                                             </div>
-                                        );
-                                    }).filter(Boolean)}
+                                        ));
+                                    })()}
                                 </div>
                             </div>
                         )}
