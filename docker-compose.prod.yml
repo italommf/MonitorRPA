@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: monitor-rpa-backend
+    restart: always
+    volumes:
+      - ./backend/data:/app/data
+    environment:
+      - DATABASE_URL=sqlite+aiosqlite:///app/data/monitor_rpa.db
+      - API_PREFIX=/api
+      - DEBUG=False
+      - CORS_ORIGINS=http://rpa.italommf.com.br,https://rpa.italommf.com.br,http://31.97.250.190,https://31.97.250.190
+    ports:
+      - "8000:8000"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: monitor-rpa-frontend
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
